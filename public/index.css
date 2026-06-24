@@ -1647,19 +1647,11 @@ select:disabled {
         width: 100%;
         max-width: 300px;
     }
-    
-    .results-grid {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    }
 }
 
 @media (max-width: 480px) {
     .game-btn {
         flex: 1 1 100%;
-    }
-    
-    .results-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     }
     
     .toast-container {
