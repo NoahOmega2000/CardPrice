@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéPrice - CardTrader Pokémon Search</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css?v=3">
+</head>
+<body>
+    <div class="app-background">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+    </div>
+    
+    <header class="app-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo-container">
+                    <div class="pokeball-icon"></div>
+                    <h1>Card<span class="highlight">Price</span></h1>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="api-widget" id="settings-section">
+                    <button class="api-widget-btn" id="toggle-settings">
+                        <span class="status-indicator yellow" id="header-token-indicator"></span>
+                        <span>🔑 API Token</span>
+                        <span class="toggle-icon">▼</span>
+                    </button>
+                    <div class="api-widget-dropdown" id="settings-body" style="display: none;">
+                        <p class="settings-desc">Inserisci il tuo Token API personale per abilitare la ricerca.</p>
+                        <div class="input-group">
+                            <input type="password" id="api-token-input" placeholder="CardTrader API Token">
+                            <button id="save-token-btn" class="btn primary-btn">Salva</button>
+                        </div>
+                        <div class="token-status" id="token-status-msg">
+                            <span class="status-indicator yellow"></span> Token non configurato.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+
+        <!-- Game Selector -->
+        <div class="game-selector">
+            <button class="game-btn active" data-game-id="5">Pokémon</button>
+            <button class="game-btn" data-game-id="4">Yu-Gi-Oh!</button>
+            <button class="game-btn" data-game-id="1">Magic</button>
+            <button class="game-btn" data-game-id="15">One Piece</button>
+        </div>
+
+
+        <div class="search-tabs">
+            <button class="tab-btn active" id="tab-global">🔍 Ricerca Globale</button>
+            <button class="tab-btn" id="tab-by-set">📦 Ricerca per Set</button>
+            <button class="tab-btn" id="tab-calculator">🧮 Calcolatore Completamento Set</button>
+            <button class="tab-btn" id="tab-wishlist">❤️ Preferiti</button>
+        </div>
+
+        <!-- Main Search Section -->
+        <section class="search-section">
+            <!-- Global Search Card -->
+            <div class="glass-card search-card full-width" id="global-search-container">
+                <h3>🔍 Cerca Carta Pokémon</h3>
+                <div class="autocomplete-container">
+                    <input type="text" id="global-card-search" placeholder="Cerca carta in qualsiasi espansione (es. Charizard, Pikachu)...">
+                    <div class="clear-input-btn" id="clear-global-card" style="display: none;">×</div>
+                    <div id="global-card-dropdown" class="dropdown-list"></div>
+                </div>
+                <div class="loading-inline" id="global-card-loading" style="display: none;">
+                    <div class="spinner"></div> Ricerca in corso...
+                </div>
+                <div class="indexing-status" id="indexing-status-msg">
+                    <span class="indexing-dot"></span> Verifica stato indicizzazione...
+                </div>
+            </div>
+
+            <!-- Search Expansions -->
+            <div class="glass-card search-card" id="expansion-search-container" style="display: none;">
+                <h3>📦 1. Seleziona l'Espansione</h3>
+                <div class="autocomplete-container">
+                    <input type="text" id="expansion-search" placeholder="Es. Base Set, Fossil, Destini Destinati..." disabled>
+                    <div class="clear-input-btn" id="clear-expansion" style="display: none;">×</div>
+                    <div id="expansion-dropdown" class="dropdown-list"></div>
+                </div>
+                <div class="loading-inline" id="expansion-loading" style="display: none;">
+                    <div class="spinner"></div> Caricamento espansioni in corso...
+                </div>
+            </div>
+
+            <!-- Search Cards -->
+            <div class="glass-card search-card disabled" id="card-search-container" style="display: none;">
+                <h3>🃏 2. Cerca la Carta</h3>
+                <div class="autocomplete-container">
+                    <input type="text" id="card-search" placeholder="Es. Charizard, Pikachu, Mewtwo..." disabled>
+                    <div class="clear-input-btn" id="clear-card" style="display: none;">×</div>
+                    <div id="card-dropdown" class="dropdown-list"></div>
+                </div>
+                <div class="loading-inline" id="card-loading" style="display: none;">
+                    <div class="spinner"></div> Caricamento carte dell'espansione...
+                </div>
+                <div class="helper-text" id="card-helper-text">Seleziona prima un'espansione per cercare le carte.</div>
+            </div>
+        </section>
+
+        <!-- Expansion Card Browser Section -->
+        <section class="glass-card expansion-browser-card" id="expansion-browser-section" style="display: none;">
+            <div class="card-header" id="toggle-expansion-browser">
+                <h2><span id="expansion-browser-title-text">🃏 Carte in questa Espansione</span> (<span id="expansion-browser-count">0</span>)</h2>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="card-body" id="expansion-browser-body">
+                <div class="expansion-cards-grid" id="expansion-cards-grid">
+                    <!-- Cards will be populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Display Grid -->
+        <section class="results-grid" id="results-section" style="display: none;">
+            
+            <!-- Left Side: Card Details & Price statistics -->
+            <div class="left-panel">
+                <div class="glass-card card-detail-card">
+                    <div class="card-image-wrapper">
+                        <img id="card-image" src="" alt="Immagine Carta" class="card-img">
+                        <div class="image-placeholder" id="image-placeholder">
+                            <span class="card-icon">🃏</span>
+                            <span>Nessuna Immagine</span>
+                        </div>
+                    </div>
+                    <div class="card-info">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h2 id="result-card-name" style="margin-bottom: 0;">Charizard</h2>
+                            <button id="wishlist-btn" class="wishlist-btn" title="Aggiungi ai Preferiti">🤍</button>
+                        </div>
+                        <div class="badge-row">
+                            <span class="badge" id="result-card-expansion">Base Set</span>
+                            <span class="badge secondary" id="result-card-code">BS</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Categoria:</span>
+                            <span id="result-card-category" class="value">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: center;">
+                            <a id="result-card-link" href="#" target="_blank" class="ct-link-btn">
+                                🔗 Apri su CardTrader
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card stats-card">
+                    <h3>📊 Riepilogo Prezzi</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box min-price-box">
+                            <span class="stat-title">Prezzo Minimo</span>
+                            <span class="stat-value" id="stat-min-price">€ 0.00</span>
+                        </div>
+                        <div class="stat-box avg-price-box">
+                            <span class="stat-title">Prezzo Medio</span>
+                            <span class="stat-value" id="stat-avg-price">€ 0.00</span>
+                        </div>
+                        <div class="stat-box listings-box">
+                            <span class="stat-title">Inserzioni Attive</span>
+                            <span class="stat-value" id="stat-listings-count">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Marketplace Listings Table -->
+            <div class="right-panel">
+                <div class="glass-card listings-card">
+                    <div class="listings-header">
+                        <h3>🛍️ Inserzioni nel Marketplace</h3>
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label for="filter-lang">Lingua:</label>
+                                <select id="filter-lang">
+                                    <option value="all">Tutte</option>
+                                    <option value="it">Italiano (IT)</option>
+                                    <option value="en">Inglese (EN)</option>
+                                    <option value="jp">Giapponese (JP)</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-foil">Foil:</label>
+                                <select id="filter-foil">
+                                    <option value="all">Tutti</option>
+                                    <option value="foil">Foil</option>
+                                    <option value="normal">Non-Foil</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter-cond">Condizione Minima:</label>
+                                <select id="filter-cond">
+                                    <option value="all">Tutte</option>
+                                    <option value="near mint">Near Mint (NM)</option>
+                                    <option value="slightly played">Slightly Played (SP)</option>
+                                    <option value="moderately played">Moderately Played (MP)</option>
+                                    <option value="played">Played (PL)</option>
+                                    <option value="heavily played">Heavily Played (HP)</option>
+                                    <option value="poor">Poor (PO)</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="sort-by">Ordina per:</label>
+                                <select id="sort-by">
+                                    <option value="price-asc">Prezzo: Crescente</option>
+                                    <option value="price-desc">Prezzo: Decrescente</option>
+                                    <option value="cond-best">Condizione: Migliore</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="items-per-page">Mostra:</label>
+                                <select id="items-per-page">
+                                    <option value="25">25</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                    <option value="all">Tutte</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="listings-table-container">
+                        <table class="listings-table">
+                            <thead>
+                                <tr>
+                                    <th>Condizione</th>
+                                    <th>Lingua</th>
+                                    <th>Foil</th>
+                                    <th>Prezzo</th>
+                                    <th>Q.tà</th>
+                                    <th>Venditore</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listings-body-table">
+                                <!-- Listings will be populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="no-listings-message" id="no-listings-msg" style="display: none;">
+                            Nessun venditore disponibile con questi filtri.
+                        </div>
+                        <div class="loading-overlay" id="listings-loading" style="display: none;">
+                            <div class="spinner big"></div>
+                            <span>Caricamento inserzioni in corso...</span>
+                        </div>
+                        <div class="pagination-controls" id="pagination-controls" style="display: none;">
+                            <button id="page-prev" class="btn secondary-btn" disabled>◄ Prec</button>
+                            <span id="page-info">Pagina 1 di 1</span>
+                            <button id="page-next" class="btn secondary-btn" disabled>Succ ►</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wishlist Section -->
+        <section class="glass-card wishlist-section" id="wishlist-section" style="display: none;">
+            <div class="card-header">
+                <h2>❤️ Carte Preferite (<span id="wishlist-count">0</span>)</h2>
+            </div>
+            <div class="card-body">
+                <div class="wishlist-tabs" id="wishlist-game-tabs" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <!-- Game tabs will be dynamically generated here -->
+                </div>
+                <div class="expansion-cards-grid" id="wishlist-grid">
+                    <!-- Wishlist cards will be dynamically inserted here -->
+                </div>
+                <div id="wishlist-empty" style="text-align: center; padding: 3rem; color: var(--color-text-muted);">
+                    Nessuna carta nei preferiti. Cerca una carta e clicca sul cuore per salvarla qui!
+                </div>
+            </div>
+        </section>
+
+        <!-- Set Completion Calculator Section -->
+        <section class="glass-card calculator-card" id="calculator-section" style="display: none;">
+            <div class="card-header">
+                <h2>🧮 Calcolatore Completamento Set</h2>
+            </div>
+            <div class="card-body">
+                <p class="calc-desc">Calcola il costo totale stimato per completare l'espansione selezionata applicando i filtri desiderati. Il costo viene stimato sommando il prezzo minimo di ogni singola carta del set trovata sul marketplace.</p>
+                
+                <div class="calc-controls">
+                    <div class="input-grid">
+                        <div class="filter-group">
+                            <label for="calc-expansion-search">Seleziona l'Espansione:</label>
+                            <div class="autocomplete-container">
+                                <input type="text" id="calc-expansion-search" placeholder="Es. Base Set, Fossil, Destini Destinati...">
+                                <div class="clear-input-btn" id="clear-calc-expansion" style="display: none;">×</div>
+                                <div id="calc-expansion-dropdown" class="dropdown-list"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="calc-filter-lang">Lingua:</label>
+                            <select id="calc-filter-lang">
+                                <option value="all">Tutte</option>
+                                <option value="it">Italiano (IT)</option>
+                                <option value="en">Inglese (EN)</option>
+                                <option value="jp">Giapponese (JP)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="calc-filter-first-edition" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="calc-filter-first-edition" style="width: 18px; height: 18px;">
+                                Prima Edizione
+                            </label>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="calc-filter-cond">Condizione Minima:</label>
+                            <select id="calc-filter-cond">
+                                <option value="all">Tutte</option>
+                                <option value="near mint">Near Mint (NM)</option>
+                                <option value="slightly played">Slightly Played (SP)</option>
+                                <option value="moderately played">Moderately Played (MP)</option>
+                                <option value="played">Played (PL)</option>
+                                <option value="heavily played">Heavily Played (HP)</option>
+                                <option value="poor">Poor (PO)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button id="calculate-btn" class="btn primary-btn" style="margin-top: 1.5rem; width: 100%;" disabled>Calcola Costo Totale</button>
+                </div>
+                
+                <div class="loading-inline" id="calc-loading" style="display: none; margin-top: 1.5rem; justify-content: center;">
+                    <div class="spinner"></div> Caricamento inserzioni dell'espansione e calcolo in corso (potrebbe richiedere circa 10-15 secondi)...
+                </div>
+                
+                <!-- Calculation Results Summary -->
+                <div class="calc-results" id="calc-results-summary" style="display: none; margin-top: 2rem;">
+                    <div class="stats-grid">
+                        <div class="stat-box total-cost-box">
+                            <span class="stat-title">Costo Totale Stimato</span>
+                            <span class="stat-value" id="calc-total-cost">€ 0.00</span>
+                        </div>
+                        <div class="stat-box cards-found-box">
+                            <span class="stat-title">Carte Trovate</span>
+                            <span class="stat-value" id="calc-cards-found">0 / 0</span>
+                        </div>
+                        <div class="stat-box avg-card-price-box">
+                            <span class="stat-title">Prezzo Medio a Carta</span>
+                            <span class="stat-value" id="calc-avg-card-price">€ 0.00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Dettaglio Prezzi per Carta -->
+                    <div class="missing-cards-section" style="margin-top: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                            <h4 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-text-main); margin: 0;">📋 Dettaglio Prezzi Minimi per Carta nel Set</h4>
+                            <div class="filter-group" style="margin: 0; display: flex; align-items: center; gap: 0.5rem; flex-direction: row;">
+                                <label for="calc-sort" style="margin: 0; font-size: 0.9rem;">Ordina per:</label>
+                                <select id="calc-sort" style="min-width: 160px; padding: 0.4rem;">
+                                    <option value="code_asc">Codice (Crescente)</option>
+                                    <option value="code_desc">Codice (Decrescente)</option>
+                                    <option value="name_asc">Alfabetico (A-Z)</option>
+                                    <option value="name_desc">Alfabetico (Z-A)</option>
+                                    <option value="price_asc">Prezzo (Crescente)</option>
+                                    <option value="price_desc">Prezzo (Decrescente)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="listings-table-container">
+                            <table class="listings-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="calc-select-all" checked title="Seleziona/Deseleziona Tutto"></th>
+                                        <th>Codice</th>
+                                        <th>Nome Carta</th>
+                                        <th>Prezzo Minimo</th>
+                                        <th>Condizione</th>
+                                        <th>Lingua</th>
+                                        <th>Variante</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="calc-cards-tbody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer-info">
+        <p>PokéPrice - Sviluppato per CardTrader API v2. I dati sui prezzi e le disponibilità derivano in tempo reale dal marketplace CardTrader.</p>
+    </footer>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js?v=24"></script>
+</body>
+</html>
