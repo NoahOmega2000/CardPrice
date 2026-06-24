@@ -145,7 +145,8 @@ const proxyRequest = async (req, res, targetUrl) => {
     }
 
     if (!token) {
-        return res.status(401).json({ error: "Unauthorized: CardTrader API token is missing." });
+        console.error("Proxy error: CARDTRADER_TOKEN is missing on server!");
+        return res.status(401).json({ error: "Unauthorized: CardTrader API token is missing on Render server." });
     }
 
     try {
@@ -161,7 +162,8 @@ const proxyRequest = async (req, res, targetUrl) => {
         if (fetchRes.ok) {
             res.status(200).type('application/json').send(data);
         } else {
-            res.status(fetchRes.status).json({ error: `HTTP ${fetchRes.status}: ${data}` });
+            console.error(`CardTrader API rejected the token. Status: ${fetchRes.status}`);
+            res.status(fetchRes.status).json({ error: `CardTrader API Error HTTP ${fetchRes.status}: ${data}` });
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
