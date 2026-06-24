@@ -312,9 +312,10 @@ async function testServerToken() {
             // Auto-collapse settings
             document.getElementById('settings-body').style.display = 'none';
             processGamesList(games);
+            initializeGames(); // Aggiunto per far caricare le espansioni in automatico
         }
     } catch (e) {
-        updateTokenStatus('yellow', 'Token mancante. Inserisci il tuo token per iniziare.');
+        updateTokenStatus('yellow', 'Errore: ' + e.message);
     }
 }
 
