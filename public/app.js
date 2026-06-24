@@ -311,7 +311,6 @@ async function testServerToken() {
             updateTokenStatus('green', 'Token API fornito dal server (.env).');
             // Auto-collapse settings
             document.getElementById('settings-body').style.display = 'none';
-            processGamesList(games);
             initializeGames(); // Aggiunto per far caricare le espansioni in automatico
         }
     } catch (e) {
