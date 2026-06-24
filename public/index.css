@@ -465,6 +465,10 @@ select:disabled {
     position: relative;
 }
 
+#global-search-container { z-index: 30; }
+#expansion-search-container { z-index: 20; }
+#card-search-container { z-index: 10; }
+
 .search-card h3 {
     font-family: var(--font-heading);
     font-size: 1.1rem;
